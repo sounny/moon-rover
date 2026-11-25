@@ -137,6 +137,98 @@
       }
       .mission-tab:disabled { opacity: 0.55; cursor: default; }
 
+      /* Mode toggle */
+      .modes {
+        display: flex;
+        gap: 10px;
+        margin: 14px 0 0;
+      }
+      .mode-btn {
+        flex: 1;
+        border: 3px solid var(--line);
+        background: var(--panel);
+        color: var(--ink);
+        border-radius: 16px;
+        font-family: "Fredoka", sans-serif;
+        font-size: 1rem;
+        font-weight: 600;
+        padding: 10px 6px;
+        cursor: pointer;
+        min-height: 52px;
+      }
+      .mode-btn[aria-pressed="true"] {
+        border-color: var(--gold);
+        background: #fff3d1;
+        box-shadow: 0 4px 0 var(--gold);
+      }
+      @media (prefers-color-scheme: dark) {
+        .mode-btn[aria-pressed="true"] { background: #4a3a08; }
+      }
+      .mode-btn:disabled { opacity: 0.55; cursor: default; }
+
+      /* Decode panel (expert mode) */
+      .decode {
+        margin-top: 18px;
+        background: var(--panel);
+        border: 2px solid var(--gold);
+        border-radius: var(--radius);
+        padding: 12px;
+      }
+      .decode h2 { font-size: 1.05rem; font-weight: 600; }
+      .decode-hint { color: var(--muted); font-weight: 700; font-size: 0.92rem; margin: 6px 0 4px; }
+      .decode-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 0;
+        border-top: 1px dashed var(--line);
+      }
+      .decode-name { font-weight: 800; width: 56px; flex: none; font-size: 0.95rem; }
+      .guess-btns { display: flex; gap: 6px; margin-left: auto; }
+      .guess-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: 11px;
+        border: 2px solid var(--line);
+        background: var(--panel-soft);
+        color: var(--ink);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+      }
+      .guess-btn:disabled { cursor: default; opacity: 0.75; }
+      .guess-btn.picked { border-color: var(--cyan); background: var(--cyan-soft); box-shadow: 0 0 0 2px var(--cyan); }
+      .guess-btn.right { border-color: var(--green); background: var(--green); color: #ffffff; opacity: 1; }
+      .decode-status {
+        font-family: "Fredoka", sans-serif;
+        font-weight: 600;
+        font-size: 1.05rem;
+        min-height: 1.4em;
+        margin: 10px 0 0;
+        text-align: center;
+      }
+      .decode-status.good { color: var(--cyan-dark); }
+      .btn-newcode {
+        margin-top: 10px;
+        width: 100%;
+        border: 3px solid var(--gold);
+        background: var(--panel);
+        color: var(--ink);
+        border-radius: 14px;
+        font-family: "Fredoka", sans-serif;
+        font-weight: 600;
+        font-size: 1rem;
+        padding: 10px;
+        min-height: 50px;
+        cursor: pointer;
+      }
+      .chip-q, .b-q { font-family: "Fredoka", sans-serif; font-weight: 700; }
+      .chip-q { font-size: 1.25rem; color: #ffffff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35); }
+      .chip.cmd-back .chip-q { color: var(--ink); text-shadow: none; }
+      .b-q { font-size: 1.7rem; line-height: 1; }
+
       /* Score strip */
       .score-strip {
         display: flex;
@@ -542,7 +634,12 @@
     <main>
       <p class="mission-line">Mission: reach the base as quickly as possible!</p>
       <h1 class="big-ask">Program the rover</h1>
-      <p class="sub-ask">Tap blocks to build a program. Then start the rover.</p>
+      <p class="sub-ask" id="subAsk">Tap blocks to build a program. Then start the rover.</p>
+
+      <div class="modes" role="group" aria-label="Choose a mode">
+        <button class="mode-btn" id="modeEasy" type="button" aria-pressed="true">Easy mode</button>
+        <button class="mode-btn" id="modeExpert" type="button" aria-pressed="false">Expert: crack the code</button>
+      </div>
 
       <div class="missions" role="tablist" aria-label="Choose a mission">
         <button class="mission-tab" id="tab0" role="tab" aria-selected="true" type="button">
@@ -580,7 +677,7 @@
 
       <div class="banner" id="banner" role="status"></div>
 
-      <section class="legend" aria-label="What the colours mean">
+      <section class="legend" id="legend" aria-label="What the colours mean">
         <h2>What the colours mean</h2>
         <div class="legend-row">
           <div class="legend-item"><span class="swatch cmd-forward" id="swF"></span> Green = Move forward</div>
@@ -588,6 +685,14 @@
           <div class="legend-item"><span class="swatch cmd-right" id="swR"></span> Purple = Turn right</div>
           <div class="legend-item"><span class="swatch cmd-back" id="swB"></span> White = Back up</div>
         </div>
+      </section>
+
+      <section class="decode" id="decodePanel" aria-label="Crack the colour code" hidden>
+        <h2>Crack the colour code</h2>
+        <p class="decode-hint">The colours are a secret code — and it is not the easy one! Run the rover, watch what each colour makes it do, then tap your guess for every colour.</p>
+        <div id="decodeRows"></div>
+        <p class="decode-status" id="decodeStatus" role="status"></p>
+        <button class="btn-newcode" id="newCodeBtn" type="button">New secret code</button>
       </section>
 
       <div class="palette" aria-label="Command blocks">
@@ -685,6 +790,15 @@
         B: { cls: "cmd-back", name: "Back up", short: "Back up", icon: ICONS.back }
       };
 
+      var COLORS = {
+        G: { cls: "cmd-forward", colorName: "Green" },
+        P: { cls: "cmd-left", colorName: "Pink" },
+        U: { cls: "cmd-right", colorName: "Purple" },
+        W: { cls: "cmd-back", colorName: "White" }
+      };
+      var COLOR_KEYS = ["G", "P", "U", "W"];
+      var FIXED_MAP = { G: "F", P: "L", U: "R", W: "B" };
+
       var ROVER_SVG =
         '<svg viewBox="0 0 64 64" aria-hidden="true">' +
         '<circle cx="14" cy="18" r="5" fill="#2b3442"/><circle cx="14" cy="32" r="5" fill="#2b3442"/><circle cx="14" cy="46" r="5" fill="#2b3442"/>' +
@@ -721,11 +835,19 @@
       var clearBtn = document.getElementById("clearBtn");
       var tabs = [document.getElementById("tab0"), document.getElementById("tab1"), document.getElementById("tab2")];
       var paletteBtns = {
-        F: document.getElementById("addF"),
-        L: document.getElementById("addL"),
-        R: document.getElementById("addR"),
-        B: document.getElementById("addB")
+        G: document.getElementById("addF"),
+        P: document.getElementById("addL"),
+        U: document.getElementById("addR"),
+        W: document.getElementById("addB")
       };
+      var legendEl = document.getElementById("legend");
+      var decodeEl = document.getElementById("decodePanel");
+      var decodeRowsEl = document.getElementById("decodeRows");
+      var decodeStatusEl = document.getElementById("decodeStatus");
+      var subAskEl = document.getElementById("subAsk");
+      var modeEasyBtn = document.getElementById("modeEasy");
+      var modeExpertBtn = document.getElementById("modeExpert");
+      var newCodeBtn = document.getElementById("newCodeBtn");
 
       var missionIdx = 0;
       var program = [];
@@ -740,6 +862,15 @@
       var timerRaf = 0;
       var elapsedMs = 0;
       var audioCtx = null;
+      var mode = "easy";
+      var codeMap = { G: "F", P: "L", U: "R", W: "B" };
+      var guesses = { G: null, P: null, U: null, W: null };
+      var cracked = false;
+
+      function resolveCmd(colorKey) {
+        return mode === "expert" ? codeMap[colorKey] : FIXED_MAP[colorKey];
+      }
+      function showIcons() { return mode === "easy" || cracked; }
 
       function fmtTime(ms) {
         return (ms / 1000).toFixed(1) + " s";
@@ -854,13 +985,14 @@
           empty.textContent = "Your blocks go here.";
           programLineEl.appendChild(empty);
         }
-        program.forEach(function (cmd, i) {
+        program.forEach(function (colorKey, i) {
+          var cmd = resolveCmd(colorKey);
           var chip = document.createElement("button");
           chip.type = "button";
-          chip.className = "chip " + COMMANDS[cmd].cls;
+          chip.className = "chip " + COLORS[colorKey].cls;
           if (typeof nowIdx === "number" && nowIdx === i) chip.classList.add("now");
-          chip.innerHTML = COMMANDS[cmd].icon;
-          chip.setAttribute("aria-label", COMMANDS[cmd].name + ". Tap to take it out.");
+          chip.innerHTML = showIcons() ? COMMANDS[cmd].icon : '<span class="chip-q">?</span>';
+          chip.setAttribute("aria-label", (showIcons() ? COMMANDS[cmd].name : COLORS[colorKey].colorName + " block, secret move") + ". Tap to take it out.");
           chip.disabled = running;
           chip.addEventListener("click", function () { removeBlock(i); });
           programLineEl.appendChild(chip);
@@ -886,6 +1018,10 @@
         clearBtn.disabled = !on;
         Object.keys(paletteBtns).forEach(function (k) { paletteBtns[k].disabled = !on; });
         tabs.forEach(function (t) { t.disabled = !on; });
+        modeEasyBtn.disabled = !on;
+        modeExpertBtn.disabled = !on;
+        newCodeBtn.disabled = !on;
+        if (mode === "expert") renderDecode();
       }
 
       function addBlock(cmd) {
@@ -1023,7 +1159,7 @@
         function doStep() {
           if (!running) return;
           if (step >= program.length) { finishStopped(); return; }
-          var cmd = program[step];
+          var cmd = resolveCmd(program[step]);
           renderProgram(step);
           var ended = false;
           if (cmd === "L") {
@@ -1065,9 +1201,21 @@
         setTimeout(doStep, 350);
       }
 
-      Object.keys(paletteBtns).forEach(function (cmd) {
-        paletteBtns[cmd].innerHTML = COMMANDS[cmd].icon + '<span class="b-name">' + COMMANDS[cmd].short + "</span>";
-        paletteBtns[cmd].addEventListener("click", function () { addBlock(cmd); });
+      function renderPalette() {
+        COLOR_KEYS.forEach(function (key) {
+          var btn = paletteBtns[key];
+          if (showIcons()) {
+            var cmd = resolveCmd(key);
+            btn.innerHTML = COMMANDS[cmd].icon + '<span class="b-name">' + COMMANDS[cmd].short + "</span>";
+            btn.setAttribute("aria-label", "Add " + COMMANDS[cmd].name.toLowerCase() + " block");
+          } else {
+            btn.innerHTML = '<span class="b-q">?</span><span class="b-name">' + COLORS[key].colorName + "</span>";
+            btn.setAttribute("aria-label", "Add " + COLORS[key].colorName + " block");
+          }
+        });
+      }
+      COLOR_KEYS.forEach(function (key) {
+        paletteBtns[key].addEventListener("click", function () { addBlock(key); });
       });
       document.getElementById("swF").innerHTML = ICONS.forward;
       document.getElementById("swL").innerHTML = ICONS.left;
@@ -1091,6 +1239,117 @@
         loadMission(missionIdx < 2 ? missionIdx + 1 : 0);
       });
 
+      function shuffleCode() {
+        var map = null;
+        var ok = false;
+        while (!ok) {
+          var arr = ["F", "L", "R", "B"];
+          for (var i = arr.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+          }
+          map = { G: arr[0], P: arr[1], U: arr[2], W: arr[3] };
+          ok = COLOR_KEYS.every(function (k) { return map[k] !== FIXED_MAP[k]; });
+        }
+        return map;
+      }
+
+      function renderDecode() {
+        decodeRowsEl.innerHTML = "";
+        COLOR_KEYS.forEach(function (key) {
+          var row = document.createElement("div");
+          row.className = "decode-row";
+          var sw = document.createElement("span");
+          sw.className = "swatch " + COLORS[key].cls;
+          row.appendChild(sw);
+          var nm = document.createElement("span");
+          nm.className = "decode-name";
+          nm.textContent = COLORS[key].colorName;
+          row.appendChild(nm);
+          var btns = document.createElement("div");
+          btns.className = "guess-btns";
+          ["F", "L", "R", "B"].forEach(function (cmd) {
+            var b = document.createElement("button");
+            b.type = "button";
+            b.className = "guess-btn";
+            if (guesses[key] === cmd) b.classList.add(cracked ? "right" : "picked");
+            b.innerHTML = COMMANDS[cmd].icon;
+            b.setAttribute("aria-label", "Guess: " + COLORS[key].colorName + " means " + COMMANDS[cmd].name);
+            b.disabled = running || cracked;
+            b.addEventListener("click", function () { makeGuess(key, cmd); });
+            btns.appendChild(b);
+          });
+          row.appendChild(btns);
+          decodeRowsEl.appendChild(row);
+        });
+        var svgs = decodeRowsEl.querySelectorAll("svg");
+        for (var s = 0; s < svgs.length; s++) {
+          svgs[s].setAttribute("width", "22");
+          svgs[s].setAttribute("height", "22");
+        }
+      }
+
+      function makeGuess(key, cmd) {
+        if (running || cracked) return;
+        guesses[key] = cmd;
+        beep(600, 0.06, "sine");
+        var all = COLOR_KEYS.every(function (k) { return guesses[k]; });
+        if (all) {
+          var right = COLOR_KEYS.every(function (k) { return guesses[k] === codeMap[k]; });
+          if (right) {
+            cracked = true;
+            decodeStatusEl.textContent = "Code cracked! You figured out every colour.";
+            decodeStatusEl.className = "decode-status good";
+            beep(523, 0.12, "sine", 0);
+            beep(659, 0.12, "sine", 0.13);
+            beep(784, 0.22, "sine", 0.26);
+            renderPalette();
+            renderProgram();
+          } else {
+            decodeStatusEl.textContent = "Not quite. Run the rover again, watch closely, and change a guess.";
+            decodeStatusEl.className = "decode-status";
+          }
+        } else {
+          decodeStatusEl.textContent = "";
+          decodeStatusEl.className = "decode-status";
+        }
+        renderDecode();
+      }
+
+      function newCode() {
+        codeMap = shuffleCode();
+        guesses = { G: null, P: null, U: null, W: null };
+        cracked = false;
+        decodeStatusEl.textContent = "A new secret code! Run the rover and watch what each colour does.";
+        decodeStatusEl.className = "decode-status";
+        renderDecode();
+      }
+
+      function setMode(next) {
+        if (running || next === mode) return;
+        mode = next;
+        modeEasyBtn.setAttribute("aria-pressed", mode === "easy" ? "true" : "false");
+        modeExpertBtn.setAttribute("aria-pressed", mode === "expert" ? "true" : "false");
+        legendEl.style.display = mode === "easy" ? "" : "none";
+        decodeEl.hidden = mode !== "expert";
+        subAskEl.textContent = mode === "easy"
+          ? "Tap blocks to build a program. Then start the rover."
+          : "The blocks show colours only. Run the rover, watch what each colour does, and crack the code!";
+        if (mode === "expert") newCode();
+        renderPalette();
+        loadMission(missionIdx);
+      }
+
+      modeEasyBtn.addEventListener("click", function () { setMode("easy"); });
+      modeExpertBtn.addEventListener("click", function () { setMode("expert"); });
+      newCodeBtn.addEventListener("click", function () {
+        if (running) return;
+        newCode();
+        renderPalette();
+        loadMission(missionIdx);
+      });
+
+      renderPalette();
       loadMission(0);
     </script>
   </body>
