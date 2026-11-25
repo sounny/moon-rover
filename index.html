@@ -1,0 +1,1097 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Moon Rover</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      button { min-height: 2.75rem; }
+    </style>
+    <style>
+      :root {
+        --bg: #e8f3ff;
+        --bg-deep: #cfe6ff;
+        --panel: #ffffff;
+        --panel-soft: #f2f8ff;
+        --ink: #16233f;
+        --muted: #51617e;
+        --line: #c3d4ea;
+        --cyan: #12b5dd;
+        --cyan-dark: #0a87a8;
+        --cyan-soft: #bff0fd;
+        --moon-a: #d7dde4;
+        --moon-b: #c3ccd6;
+        --cell-line: #9fb0c0;
+        --crater: #77828f;
+        --crater-dark: #4d5866;
+        --green: #2fbf5a;
+        --green-ink: #063d17;
+        --pink: #ff5f9e;
+        --pink-ink: #5c0a2c;
+        --purple: #9b6bf3;
+        --purple-ink: #2c1060;
+        --white-block: #ffffff;
+        --white-ink: #16233f;
+        --gold: #ffb703;
+        --danger: #e63946;
+        --shadow: 0 10px 30px rgba(22, 35, 63, 0.16);
+        --radius: 18px;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0a0f24;
+          --bg-deep: #060918;
+          --panel: #171f3d;
+          --panel-soft: #1f2a52;
+          --ink: #f2f6ff;
+          --muted: #a9b8d8;
+          --line: #33436e;
+          --cyan: #22cdf5;
+          --cyan-dark: #7fe6ff;
+          --cyan-soft: #0e4a61;
+          --moon-a: #8d99a8;
+          --moon-b: #78869a;
+          --cell-line: #5b6a80;
+          --crater: #525f70;
+          --crater-dark: #333e4d;
+          --white-block: #f4f7ff;
+          --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: "Nunito", system-ui, sans-serif;
+        background:
+          radial-gradient(circle at 12% 8%, rgba(255, 255, 255, 0.55) 0 2px, transparent 3px),
+          radial-gradient(circle at 84% 14%, rgba(255, 255, 255, 0.4) 0 2px, transparent 3px),
+          radial-gradient(circle at 68% 4%, rgba(255, 255, 255, 0.35) 0 1.5px, transparent 2.5px),
+          linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+        color: var(--ink);
+        min-height: 100vh;
+      }
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 16px 14px 40px;
+      }
+      h1, h2, h3 { font-family: "Fredoka", "Nunito", sans-serif; margin: 0; }
+      .mission-line {
+        font-family: "Fredoka", sans-serif;
+        font-weight: 600;
+        font-size: 1.05rem;
+        letter-spacing: 0.04em;
+        color: var(--cyan-dark);
+        text-align: center;
+        text-transform: uppercase;
+      }
+      .big-ask {
+        text-align: center;
+        font-size: 1.65rem;
+        font-weight: 600;
+        line-height: 1.15;
+        margin-top: 4px;
+      }
+      .sub-ask {
+        text-align: center;
+        color: var(--muted);
+        font-weight: 700;
+        margin: 6px 0 0;
+        font-size: 1rem;
+      }
+
+      /* Mission tabs */
+      .missions {
+        display: flex;
+        gap: 10px;
+        margin: 16px 0 12px;
+      }
+      .mission-tab {
+        flex: 1;
+        border: 3px solid var(--line);
+        background: var(--panel);
+        color: var(--ink);
+        border-radius: 16px;
+        font-family: "Fredoka", sans-serif;
+        font-size: 1.05rem;
+        font-weight: 600;
+        padding: 10px 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        min-height: 52px;
+      }
+      .mission-tab .done-star { display: none; color: var(--gold); }
+      .mission-tab.is-done .done-star { display: inline-flex; }
+      .mission-tab[aria-selected="true"] {
+        border-color: var(--cyan);
+        background: var(--cyan-soft);
+        box-shadow: 0 4px 0 var(--cyan);
+      }
+      .mission-tab:disabled { opacity: 0.55; cursor: default; }
+
+      /* Score strip */
+      .score-strip {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .stat {
+        flex: 1;
+        background: var(--panel);
+        border: 2px solid var(--line);
+        border-radius: 14px;
+        padding: 8px 10px;
+        text-align: center;
+      }
+      .stat .stat-label {
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .stat .stat-value {
+        font-family: "Fredoka", sans-serif;
+        font-size: 1.5rem;
+        font-weight: 600;
+        line-height: 1.1;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Board */
+      .board-wrap {
+        background: var(--panel);
+        border: 3px solid var(--cyan);
+        border-radius: 22px;
+        padding: 10px;
+        box-shadow: var(--shadow);
+      }
+      .board {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        grid-template-rows: repeat(6, 1fr);
+        aspect-ratio: 8 / 6;
+        border-radius: 14px;
+        overflow: hidden;
+        background: var(--moon-a);
+      }
+      .cell {
+        border: 1px solid var(--cell-line);
+        background:
+          radial-gradient(circle at 30% 70%, rgba(0, 0, 0, 0.07) 0 3px, transparent 4px),
+          radial-gradient(circle at 72% 26%, rgba(0, 0, 0, 0.06) 0 2px, transparent 3px),
+          linear-gradient(135deg, var(--moon-a), var(--moon-b));
+        position: relative;
+      }
+      .cell.trail::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        margin: auto;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--cyan);
+        opacity: 0.75;
+      }
+      .cell.is-start { background: var(--cyan); }
+      .cell.is-base { background: var(--cyan); }
+      .cell-tag {
+        position: absolute;
+        inset: auto 0 3px 0;
+        text-align: center;
+        font-family: "Fredoka", sans-serif;
+        font-weight: 700;
+        font-size: clamp(0.55rem, 2.4vw, 0.8rem);
+        letter-spacing: 0.06em;
+        color: #ffffff;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+        pointer-events: none;
+      }
+      .base-icon {
+        position: absolute;
+        inset: 6% 0 auto 0;
+        display: flex;
+        justify-content: center;
+        color: #ffffff;
+        pointer-events: none;
+      }
+      .crater {
+        position: absolute;
+        inset: 14%;
+        border-radius: 50%;
+        background: radial-gradient(circle at 42% 38%, var(--crater-dark) 0 34%, var(--crater) 58%, rgba(255, 255, 255, 0.35) 78%, transparent 82%);
+        box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.4);
+        pointer-events: none;
+      }
+      .rover {
+        position: absolute;
+        width: 12.5%;
+        height: 16.6667%;
+        left: 0;
+        top: 0;
+        transition: left 0.45s ease, top 0.45s ease;
+        z-index: 3;
+        pointer-events: none;
+      }
+      .rover-inner {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.35s ease;
+      }
+      .rover svg { width: 88%; height: 88%; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.35)); }
+      .rover.is-stuck .rover-inner { animation: wobble 0.5s ease 2; }
+      @keyframes wobble {
+        0%, 100% { transform: rotate(0deg); }
+        25% { transform: rotate(-9deg); }
+        75% { transform: rotate(9deg); }
+      }
+
+      /* Message banner */
+      .banner {
+        margin-top: 12px;
+        border-radius: 14px;
+        padding: 12px 14px;
+        font-family: "Fredoka", sans-serif;
+        font-weight: 600;
+        font-size: 1.1rem;
+        text-align: center;
+        display: none;
+      }
+      .banner.show { display: block; }
+      .banner.bad { background: #ffe3e7; color: #8f1020; border: 2px solid var(--danger); }
+      .banner.info { background: var(--cyan-soft); color: var(--ink); border: 2px solid var(--cyan); }
+      @media (prefers-color-scheme: dark) {
+        .banner.bad { background: #4d1420; color: #ffd7dd; }
+      }
+
+      /* Legend */
+      .legend {
+        margin-top: 18px;
+        background: var(--panel);
+        border: 2px solid var(--line);
+        border-radius: var(--radius);
+        padding: 10px 12px;
+      }
+      .legend h2 { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+      .legend-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 7px 14px;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-weight: 800;
+        font-size: 0.98rem;
+        min-height: 36px;
+      }
+      .swatch {
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        flex: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid rgba(0, 0, 0, 0.18);
+      }
+
+      /* Palette */
+      .palette {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-top: 12px;
+      }
+      .block-btn {
+        border: none;
+        border-radius: 16px;
+        cursor: pointer;
+        font-family: "Fredoka", sans-serif;
+        font-weight: 600;
+        padding: 10px 4px 9px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        min-height: 84px;
+        box-shadow: 0 5px 0 rgba(0, 0, 0, 0.22);
+      }
+      .block-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.22); }
+      .block-btn:disabled { opacity: 0.5; cursor: default; transform: none; }
+      .block-btn .b-name { font-size: 0.92rem; line-height: 1.05; text-align: center; }
+      .cmd-forward { background: var(--green); color: var(--green-ink); }
+      .cmd-left { background: var(--pink); color: var(--pink-ink); }
+      .cmd-right { background: var(--purple); color: var(--purple-ink); }
+      .cmd-back { background: var(--white-block); color: var(--white-ink); border: 3px solid var(--line); }
+
+      /* Program line */
+      .program-card {
+        margin-top: 16px;
+        background: var(--panel);
+        border: 2px solid var(--line);
+        border-radius: var(--radius);
+        padding: 12px;
+      }
+      .program-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      .program-head h2 { font-size: 1.05rem; font-weight: 600; }
+      .program-head .hint { color: var(--muted); font-weight: 700; font-size: 0.88rem; text-align: right; }
+      .program-line {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 7px;
+        background: var(--panel-soft);
+        border: 2px dashed var(--line);
+        border-radius: 14px;
+        padding: 10px;
+        min-height: 72px;
+      }
+      .cap {
+        font-family: "Fredoka", sans-serif;
+        font-weight: 700;
+        font-size: 0.8rem;
+        letter-spacing: 0.05em;
+        background: var(--cyan);
+        color: #ffffff;
+        border-radius: 10px;
+        padding: 8px 9px;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      }
+      .cap.end { margin-left: auto; }
+      .chip {
+        border: none;
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 3px 0 rgba(0, 0, 0, 0.2);
+        padding: 0;
+      }
+      .chip:disabled { cursor: default; }
+      .chip.now {
+        outline: 4px solid var(--gold);
+        outline-offset: 2px;
+        transform: scale(1.12);
+      }
+      .chip.cmd-back { border: 2px solid var(--line); }
+      .program-empty {
+        color: var(--muted);
+        font-weight: 800;
+        font-size: 0.95rem;
+        padding: 4px 2px;
+      }
+      .program-line.shake { animation: shake 0.4s ease; }
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-6px); }
+        75% { transform: translateX(6px); }
+      }
+
+      /* Controls */
+      .controls {
+        display: flex;
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .btn-start {
+        flex: 1;
+        border: none;
+        border-radius: 16px;
+        background: var(--cyan);
+        color: #ffffff;
+        font-family: "Fredoka", sans-serif;
+        font-weight: 700;
+        font-size: 1.3rem;
+        padding: 14px 10px;
+        min-height: 60px;
+        cursor: pointer;
+        box-shadow: 0 6px 0 var(--cyan-dark);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+      }
+      .btn-start:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--cyan-dark); }
+      .btn-start:disabled { opacity: 0.55; cursor: default; transform: none; }
+      .btn-clear {
+        border: 3px solid var(--line);
+        border-radius: 16px;
+        background: var(--panel);
+        color: var(--ink);
+        font-family: "Fredoka", sans-serif;
+        font-weight: 600;
+        font-size: 1.05rem;
+        padding: 12px 18px;
+        min-height: 60px;
+        cursor: pointer;
+      }
+      .btn-clear:disabled { opacity: 0.5; cursor: default; }
+
+      /* Win overlay */
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(8, 14, 34, 0.62);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+        z-index: 20;
+      }
+      .overlay.show { display: flex; }
+      .win-card {
+        background: var(--panel);
+        border-radius: 24px;
+        padding: 26px 22px 22px;
+        max-width: 420px;
+        width: 100%;
+        text-align: center;
+        box-shadow: var(--shadow);
+        position: relative;
+        overflow: hidden;
+      }
+      .win-card h2 { font-size: 2rem; font-weight: 700; }
+      .win-stats {
+        display: flex;
+        gap: 10px;
+        margin: 16px 0 6px;
+      }
+      .win-note { color: var(--muted); font-weight: 800; margin: 8px 0 0; }
+      .win-note.best { color: var(--cyan-dark); }
+      .stamp {
+        width: 148px;
+        height: 148px;
+        margin: 6px auto 4px;
+        color: var(--cyan-dark);
+        animation: stampIn 0.45s cubic-bezier(0.2, 2.2, 0.4, 1) both;
+      }
+      @keyframes stampIn {
+        from { transform: scale(2.4) rotate(-24deg); opacity: 0; }
+        to { transform: scale(1) rotate(-10deg); opacity: 1; }
+      }
+      .win-btns { display: flex; gap: 10px; margin-top: 18px; }
+      .btn-again {
+        flex: 1;
+        border: 3px solid var(--cyan);
+        background: var(--panel);
+        color: var(--ink);
+        border-radius: 14px;
+        font-family: "Fredoka", sans-serif;
+        font-weight: 600;
+        font-size: 1.1rem;
+        padding: 12px 8px;
+        min-height: 54px;
+        cursor: pointer;
+      }
+      .btn-next {
+        flex: 1;
+        border: none;
+        background: var(--cyan);
+        color: #ffffff;
+        border-radius: 14px;
+        font-family: "Fredoka", sans-serif;
+        font-weight: 700;
+        font-size: 1.1rem;
+        padding: 12px 8px;
+        min-height: 54px;
+        cursor: pointer;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+      }
+      @media (max-width: 480px) {
+        .palette { grid-template-columns: repeat(2, 1fr); }
+        .block-btn { min-height: 76px; }
+        .big-ask { font-size: 1.4rem; }
+        .legend-row { grid-template-columns: 1fr; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .rover, .rover-inner { transition: none; }
+        .stamp { animation: none; }
+        .rover.is-stuck .rover-inner, .program-line.shake { animation: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="mission-line">Mission: reach the base as quickly as possible!</p>
+      <h1 class="big-ask">Program the rover</h1>
+      <p class="sub-ask">Tap blocks to build a program. Then start the rover.</p>
+
+      <div class="missions" role="tablist" aria-label="Choose a mission">
+        <button class="mission-tab" id="tab0" role="tab" aria-selected="true" type="button">
+          <svg class="done-star" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.2 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z"/></svg>
+          Mission 1
+        </button>
+        <button class="mission-tab" id="tab1" role="tab" aria-selected="false" type="button">
+          <svg class="done-star" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.2 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z"/></svg>
+          Mission 2
+        </button>
+        <button class="mission-tab" id="tab2" role="tab" aria-selected="false" type="button">
+          <svg class="done-star" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.2 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z"/></svg>
+          Mission 3
+        </button>
+      </div>
+
+      <div class="score-strip">
+        <div class="stat">
+          <div class="stat-label">Time</div>
+          <div class="stat-value" id="timeValue">0.0 s</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Blocks</div>
+          <div class="stat-value" id="blockValue">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Best time</div>
+          <div class="stat-value" id="bestValue">--</div>
+        </div>
+      </div>
+
+      <div class="board-wrap">
+        <div class="board" id="board" aria-label="Moon map"></div>
+      </div>
+
+      <div class="banner" id="banner" role="status"></div>
+
+      <section class="legend" aria-label="What the colours mean">
+        <h2>What the colours mean</h2>
+        <div class="legend-row">
+          <div class="legend-item"><span class="swatch cmd-forward" id="swF"></span> Green = Move forward</div>
+          <div class="legend-item"><span class="swatch cmd-left" id="swL"></span> Pink = Turn left</div>
+          <div class="legend-item"><span class="swatch cmd-right" id="swR"></span> Purple = Turn right</div>
+          <div class="legend-item"><span class="swatch cmd-back" id="swB"></span> White = Back up</div>
+        </div>
+      </section>
+
+      <div class="palette" aria-label="Command blocks">
+        <button class="block-btn cmd-forward" id="addF" type="button" aria-label="Add move forward block"></button>
+        <button class="block-btn cmd-left" id="addL" type="button" aria-label="Add turn left block"></button>
+        <button class="block-btn cmd-right" id="addR" type="button" aria-label="Add turn right block"></button>
+        <button class="block-btn cmd-back" id="addB" type="button" aria-label="Add back up block"></button>
+      </div>
+
+      <section class="program-card">
+        <div class="program-head">
+          <h2>Your program</h2>
+          <span class="hint">Tap a block in the line to take it out.</span>
+        </div>
+        <div class="program-line" id="programLine"></div>
+      </section>
+
+      <div class="controls">
+        <button class="btn-start" id="startBtn" type="button">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>
+          Start the Rover
+        </button>
+        <button class="btn-clear" id="clearBtn" type="button">Clear</button>
+      </div>
+    </main>
+
+    <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+      <div class="win-card">
+        <div class="stamp" id="stamp" aria-hidden="true"></div>
+        <h2 id="winTitle">Mission complete!</h2>
+        <div class="win-stats">
+          <div class="stat">
+            <div class="stat-label">Time</div>
+            <div class="stat-value" id="winTime">0.0 s</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Blocks used</div>
+            <div class="stat-value" id="winBlocks">0</div>
+          </div>
+        </div>
+        <p class="win-note best" id="winBest"></p>
+        <p class="win-note" id="winExtra"></p>
+        <div class="win-btns">
+          <button class="btn-again" id="againBtn" type="button">Play again</button>
+          <button class="btn-next" id="nextBtn" type="button">Next mission</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      var COLS = 8;
+      var ROWS = 6;
+      var MAX_BLOCKS = 20;
+      var STEP_MS = 640;
+
+      var DIRS = [
+        { dx: 0, dy: -1 },
+        { dx: 1, dy: 0 },
+        { dx: 0, dy: 1 },
+        { dx: -1, dy: 0 }
+      ];
+
+      var MISSIONS = [
+        {
+          name: "Mission 1",
+          start: { x: 1, y: 4, dir: 1 },
+          base: { x: 6, y: 2 },
+          craters: [[2, 2], [4, 3], [5, 4], [1, 1]]
+        },
+        {
+          name: "Mission 2",
+          start: { x: 0, y: 4, dir: 1 },
+          base: { x: 7, y: 1 },
+          craters: [[1, 3], [3, 3], [4, 3], [1, 1], [3, 0], [6, 3], [7, 3], [0, 2]]
+        },
+        {
+          name: "Mission 3",
+          start: { x: 1, y: 1, dir: 1 },
+          base: { x: 6, y: 4 },
+          craters: [[4, 1], [2, 3], [5, 2], [6, 2], [2, 5], [5, 5], [0, 3], [7, 1], [1, 4], [6, 0]]
+        }
+      ];
+
+      var ICONS = {
+        forward: '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20V5"/><path d="M5 11l7-7 7 7"/></svg>',
+        left: '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5L4 10l5 5"/><path d="M4 10h9a7 7 0 0 1 7 7v2"/></svg>',
+        right: '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l5 5-5 5"/><path d="M20 10h-9a7 7 0 0 0-7 7v2"/></svg>',
+        back: '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v15"/><path d="M5 13l7 7 7-7"/></svg>'
+      };
+
+      var COMMANDS = {
+        F: { cls: "cmd-forward", name: "Move forward", short: "Forward", icon: ICONS.forward },
+        L: { cls: "cmd-left", name: "Turn left", short: "Turn left", icon: ICONS.left },
+        R: { cls: "cmd-right", name: "Turn right", short: "Turn right", icon: ICONS.right },
+        B: { cls: "cmd-back", name: "Back up", short: "Back up", icon: ICONS.back }
+      };
+
+      var ROVER_SVG =
+        '<svg viewBox="0 0 64 64" aria-hidden="true">' +
+        '<circle cx="14" cy="18" r="5" fill="#2b3442"/><circle cx="14" cy="32" r="5" fill="#2b3442"/><circle cx="14" cy="46" r="5" fill="#2b3442"/>' +
+        '<circle cx="50" cy="18" r="5" fill="#2b3442"/><circle cx="50" cy="32" r="5" fill="#2b3442"/><circle cx="50" cy="46" r="5" fill="#2b3442"/>' +
+        '<rect x="18" y="10" width="28" height="44" rx="7" fill="#ffffff" stroke="#2b3442" stroke-width="3"/>' +
+        '<rect x="24" y="18" width="16" height="12" rx="3" fill="#12b5dd"/>' +
+        '<circle cx="32" cy="40" r="4" fill="#ffb703"/>' +
+        '<path d="M32 2 L39 10 L25 10 Z" fill="#e63946"/>' +
+        '</svg>';
+
+      var BASE_SVG =
+        '<svg width="58%" height="30" viewBox="0 0 48 30" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" aria-hidden="true">' +
+        '<path d="M6 26a12 10 0 0 1 24 0"/><path d="M2 26h30"/><circle cx="14" cy="21" r="2.4" fill="#ffffff"/>' +
+        '<path d="M34 26V12"/><path d="M34 12l8-6"/><circle cx="43" cy="5" r="2.2" fill="#ffffff"/></svg>';
+
+      var STAMP_SVG =
+        '<svg viewBox="0 0 160 160" width="148" height="148" aria-hidden="true">' +
+        '<circle cx="80" cy="80" r="74" fill="none" stroke="currentColor" stroke-width="4"/>' +
+        '<circle cx="80" cy="80" r="62" fill="none" stroke="currentColor" stroke-width="2.5"/>' +
+        '<path d="M52 96 L80 38 L108 96 L96 96 L80 62 L64 96 Z" fill="currentColor"/>' +
+        '<path d="M44 104 Q80 88 116 104" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>' +
+        '<text x="80" y="122" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="14" fill="currentColor" letter-spacing="2">MOON ROVER</text>' +
+        '<text x="80" y="140" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="600" font-size="10.5" fill="currentColor" letter-spacing="1.5">TOUR GUIDE STAMP</text>' +
+        '</svg>';
+
+      var boardEl = document.getElementById("board");
+      var programLineEl = document.getElementById("programLine");
+      var bannerEl = document.getElementById("banner");
+      var timeValueEl = document.getElementById("timeValue");
+      var blockValueEl = document.getElementById("blockValue");
+      var bestValueEl = document.getElementById("bestValue");
+      var overlayEl = document.getElementById("overlay");
+      var startBtn = document.getElementById("startBtn");
+      var clearBtn = document.getElementById("clearBtn");
+      var tabs = [document.getElementById("tab0"), document.getElementById("tab1"), document.getElementById("tab2")];
+      var paletteBtns = {
+        F: document.getElementById("addF"),
+        L: document.getElementById("addL"),
+        R: document.getElementById("addR"),
+        B: document.getElementById("addB")
+      };
+
+      var missionIdx = 0;
+      var program = [];
+      var running = false;
+      var rover = { x: 0, y: 0, dir: 1 };
+      var roverEl = null;
+      var roverInnerEl = null;
+      var cellEls = [];
+      var bestTimes = [null, null, null];
+      var doneMissions = [false, false, false];
+      var timerStart = 0;
+      var timerRaf = 0;
+      var elapsedMs = 0;
+      var audioCtx = null;
+
+      function fmtTime(ms) {
+        return (ms / 1000).toFixed(1) + " s";
+      }
+
+      function beep(freq, dur, type, delay) {
+        try {
+          if (!audioCtx) {
+            var AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return;
+            audioCtx = new AC();
+          }
+          if (audioCtx.state === "suspended") audioCtx.resume();
+          var t = audioCtx.currentTime + (delay || 0);
+          var osc = audioCtx.createOscillator();
+          var gain = audioCtx.createGain();
+          osc.type = type || "sine";
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0.12, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(t);
+          osc.stop(t + dur);
+        } catch (e) { /* sound is a bonus only */ }
+      }
+
+      function craterSet(m) {
+        var s = {};
+        m.craters.forEach(function (c) { s[c[0] + "," + c[1]] = true; });
+        return s;
+      }
+
+      function buildBoard() {
+        var m = MISSIONS[missionIdx];
+        var craters = craterSet(m);
+        boardEl.innerHTML = "";
+        cellEls = [];
+        for (var y = 0; y < ROWS; y++) {
+          for (var x = 0; x < COLS; x++) {
+            var cell = document.createElement("div");
+            cell.className = "cell";
+            if (x === m.start.x && y === m.start.y) {
+              cell.classList.add("is-start");
+              var tag = document.createElement("span");
+              tag.className = "cell-tag";
+              tag.textContent = "START";
+              cell.appendChild(tag);
+            }
+            if (x === m.base.x && y === m.base.y) {
+              cell.classList.add("is-base");
+              var icon = document.createElement("span");
+              icon.className = "base-icon";
+              icon.innerHTML = BASE_SVG;
+              cell.appendChild(icon);
+              var btag = document.createElement("span");
+              btag.className = "cell-tag";
+              btag.textContent = "BASE";
+              cell.appendChild(btag);
+            }
+            if (craters[x + "," + y]) {
+              var cr = document.createElement("span");
+              cr.className = "crater";
+              cell.appendChild(cr);
+            }
+            boardEl.appendChild(cell);
+            cellEls.push(cell);
+          }
+        }
+        roverEl = document.createElement("div");
+        roverEl.className = "rover";
+        roverEl.innerHTML = '<div class="rover-inner">' + ROVER_SVG + "</div>";
+        roverInnerEl = roverEl.firstChild;
+        boardEl.appendChild(roverEl);
+        placeRover(false);
+      }
+
+      function placeRover(animate) {
+        if (!roverEl) return;
+        if (!animate) roverEl.style.transition = "none";
+        roverEl.style.left = (rover.x * 12.5) + "%";
+        roverEl.style.top = (rover.y * (100 / ROWS)) + "%";
+        roverInnerEl.style.transform = "rotate(" + (rover.dir * 90) + "deg)";
+        if (!animate) {
+          void roverEl.offsetWidth;
+          roverEl.style.transition = "";
+        }
+      }
+
+      function markTrail() {
+        var idx = rover.y * COLS + rover.x;
+        if (cellEls[idx]) cellEls[idx].classList.add("trail");
+      }
+
+      function resetRoverToStart() {
+        var m = MISSIONS[missionIdx];
+        rover = { x: m.start.x, y: m.start.y, dir: m.start.dir };
+        cellEls.forEach(function (c) { c.classList.remove("trail"); });
+        roverEl.classList.remove("is-stuck");
+        placeRover(false);
+      }
+
+      function renderProgram(nowIdx) {
+        programLineEl.innerHTML = "";
+        var startCap = document.createElement("span");
+        startCap.className = "cap";
+        startCap.textContent = "START";
+        programLineEl.appendChild(startCap);
+        if (program.length === 0) {
+          var empty = document.createElement("span");
+          empty.className = "program-empty";
+          empty.textContent = "Your blocks go here.";
+          programLineEl.appendChild(empty);
+        }
+        program.forEach(function (cmd, i) {
+          var chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = "chip " + COMMANDS[cmd].cls;
+          if (typeof nowIdx === "number" && nowIdx === i) chip.classList.add("now");
+          chip.innerHTML = COMMANDS[cmd].icon;
+          chip.setAttribute("aria-label", COMMANDS[cmd].name + ". Tap to take it out.");
+          chip.disabled = running;
+          chip.addEventListener("click", function () { removeBlock(i); });
+          programLineEl.appendChild(chip);
+        });
+        var baseCap = document.createElement("span");
+        baseCap.className = "cap end";
+        baseCap.textContent = "BASE";
+        programLineEl.appendChild(baseCap);
+        blockValueEl.textContent = String(program.length);
+      }
+
+      function showBanner(text, kind) {
+        bannerEl.textContent = text;
+        bannerEl.className = "banner show " + kind;
+      }
+      function hideBanner() {
+        bannerEl.className = "banner";
+        bannerEl.textContent = "";
+      }
+
+      function setControlsEnabled(on) {
+        startBtn.disabled = !on;
+        clearBtn.disabled = !on;
+        Object.keys(paletteBtns).forEach(function (k) { paletteBtns[k].disabled = !on; });
+        tabs.forEach(function (t) { t.disabled = !on; });
+      }
+
+      function addBlock(cmd) {
+        if (running) return;
+        if (program.length >= MAX_BLOCKS) {
+          showBanner("The line is full. That is plenty of blocks!", "info");
+          return;
+        }
+        hideBanner();
+        resetRoverToStart();
+        program.push(cmd);
+        renderProgram();
+        beep(660, 0.07, "sine");
+      }
+
+      function removeBlock(i) {
+        if (running) return;
+        hideBanner();
+        resetRoverToStart();
+        program.splice(i, 1);
+        renderProgram();
+        beep(440, 0.06, "sine");
+      }
+
+      function clearProgram() {
+        if (running) return;
+        hideBanner();
+        program = [];
+        resetRoverToStart();
+        renderProgram();
+      }
+
+      function startTimer() {
+        timerStart = performance.now();
+        elapsedMs = 0;
+        function tick() {
+          elapsedMs = performance.now() - timerStart;
+          timeValueEl.textContent = fmtTime(elapsedMs);
+          if (running) timerRaf = requestAnimationFrame(tick);
+        }
+        timerRaf = requestAnimationFrame(tick);
+      }
+      function stopTimer() {
+        cancelAnimationFrame(timerRaf);
+        elapsedMs = performance.now() - timerStart;
+        timeValueEl.textContent = fmtTime(elapsedMs);
+      }
+
+      function loadMission(idx) {
+        missionIdx = idx;
+        program = [];
+        running = false;
+        tabs.forEach(function (t, i) {
+          t.setAttribute("aria-selected", i === idx ? "true" : "false");
+        });
+        elapsedMs = 0;
+        timeValueEl.textContent = "0.0 s";
+        bestValueEl.textContent = bestTimes[idx] === null ? "--" : fmtTime(bestTimes[idx]);
+        hideBanner();
+        overlayEl.classList.remove("show");
+        buildBoard();
+        resetRoverToStart();
+        renderProgram();
+      }
+
+      function finishStuck() {
+        running = false;
+        stopTimer();
+        setControlsEnabled(true);
+        renderProgram();
+        showBanner("Rover stuck! Try a different program.", "bad");
+        beep(160, 0.3, "square");
+        setTimeout(function () {
+          if (!running) resetRoverToStart();
+        }, 1100);
+      }
+
+      function finishStopped() {
+        running = false;
+        stopTimer();
+        setControlsEnabled(true);
+        renderProgram();
+        showBanner("The rover stopped. It is not at the base yet. Add more blocks!", "info");
+      }
+
+      function finishWin() {
+        running = false;
+        stopTimer();
+        setControlsEnabled(true);
+        renderProgram();
+        var isBest = bestTimes[missionIdx] === null || elapsedMs < bestTimes[missionIdx];
+        if (isBest) bestTimes[missionIdx] = elapsedMs;
+        bestValueEl.textContent = fmtTime(bestTimes[missionIdx]);
+        doneMissions[missionIdx] = true;
+        tabs[missionIdx].classList.add("is-done");
+        document.getElementById("winTime").textContent = fmtTime(elapsedMs);
+        document.getElementById("winBlocks").textContent = String(program.length);
+        document.getElementById("winBest").textContent = isBest
+          ? "New best time for " + MISSIONS[missionIdx].name + "!"
+          : "Best time for " + MISSIONS[missionIdx].name + ": " + fmtTime(bestTimes[missionIdx]);
+        var allDone = doneMissions.every(function (d) { return d; });
+        document.getElementById("winExtra").textContent = allDone
+          ? "You finished all 3 missions. Great driving!"
+          : "You earned the tour guide stamp.";
+        var nextBtn = document.getElementById("nextBtn");
+        nextBtn.textContent = missionIdx < 2 ? "Next mission" : "Mission 1";
+        document.getElementById("stamp").innerHTML = STAMP_SVG;
+        overlayEl.classList.add("show");
+        beep(523, 0.12, "sine", 0);
+        beep(659, 0.12, "sine", 0.13);
+        beep(784, 0.2, "sine", 0.26);
+      }
+
+      function runProgram() {
+        if (running) return;
+        if (program.length === 0) {
+          programLineEl.classList.remove("shake");
+          void programLineEl.offsetWidth;
+          programLineEl.classList.add("shake");
+          showBanner("Add some blocks first, then start the rover.", "info");
+          return;
+        }
+        hideBanner();
+        overlayEl.classList.remove("show");
+        resetRoverToStart();
+        markTrail();
+        running = true;
+        setControlsEnabled(false);
+        renderProgram(-1);
+        startTimer();
+        var m = MISSIONS[missionIdx];
+        var craters = craterSet(m);
+        var step = 0;
+
+        function doStep() {
+          if (!running) return;
+          if (step >= program.length) { finishStopped(); return; }
+          var cmd = program[step];
+          renderProgram(step);
+          var ended = false;
+          if (cmd === "L") {
+            rover.dir = (rover.dir + 3) % 4;
+            placeRover(true);
+            beep(392, 0.08, "sine");
+          } else if (cmd === "R") {
+            rover.dir = (rover.dir + 1) % 4;
+            placeRover(true);
+            beep(392, 0.08, "sine");
+          } else {
+            var d = DIRS[rover.dir];
+            var sign = cmd === "F" ? 1 : -1;
+            var nx = rover.x + d.dx * sign;
+            var ny = rover.y + d.dy * sign;
+            if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) {
+              roverEl.classList.add("is-stuck");
+              ended = true;
+              setTimeout(finishStuck, 420);
+            } else {
+              rover.x = nx;
+              rover.y = ny;
+              placeRover(true);
+              markTrail();
+              beep(cmd === "F" ? 523 : 330, 0.08, "sine");
+              if (craters[nx + "," + ny]) {
+                roverEl.classList.add("is-stuck");
+                ended = true;
+                setTimeout(finishStuck, 460);
+              } else if (nx === m.base.x && ny === m.base.y) {
+                ended = true;
+                setTimeout(finishWin, 480);
+              }
+            }
+          }
+          step++;
+          if (!ended) setTimeout(doStep, STEP_MS);
+        }
+        setTimeout(doStep, 350);
+      }
+
+      Object.keys(paletteBtns).forEach(function (cmd) {
+        paletteBtns[cmd].innerHTML = COMMANDS[cmd].icon + '<span class="b-name">' + COMMANDS[cmd].short + "</span>";
+        paletteBtns[cmd].addEventListener("click", function () { addBlock(cmd); });
+      });
+      document.getElementById("swF").innerHTML = ICONS.forward;
+      document.getElementById("swL").innerHTML = ICONS.left;
+      document.getElementById("swR").innerHTML = ICONS.right;
+      document.getElementById("swB").innerHTML = ICONS.back;
+      var swatches = document.querySelectorAll(".swatch svg");
+      for (var s = 0; s < swatches.length; s++) {
+        swatches[s].setAttribute("width", "19");
+        swatches[s].setAttribute("height", "19");
+      }
+
+      startBtn.addEventListener("click", runProgram);
+      clearBtn.addEventListener("click", clearProgram);
+      tabs.forEach(function (t, i) {
+        t.addEventListener("click", function () { if (!running) loadMission(i); });
+      });
+      document.getElementById("againBtn").addEventListener("click", function () {
+        loadMission(missionIdx);
+      });
+      document.getElementById("nextBtn").addEventListener("click", function () {
+        loadMission(missionIdx < 2 ? missionIdx + 1 : 0);
+      });
+
+      loadMission(0);
+    </script>
+  </body>
+</html>
